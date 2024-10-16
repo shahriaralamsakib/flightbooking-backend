@@ -3,6 +3,7 @@ const app = express();
 const flightDetailUpdateRoute = require('./routes/flightDetailUpdateRoute.js');
 const getUsersDetailsRoute = require('./routes/getUsersDetailsRoute.js');
 const updateStatusRoute = require('./routes/updateStatusRoute.js');
+const healthRoute = require('./routes/healthRoute.js');
 const dotenv = require('dotenv');
 const cors = require('cors');
 
@@ -33,6 +34,7 @@ app.use(express.json());
 app.use('/api/flights', flightDetailUpdateRoute);
 app.use('/api/flights', getUsersDetailsRoute);
 app.use('/api/flights', updateStatusRoute);
+app.use('/api/flights', healthRoute);
 
 // Start server
 const PORT = process.env.PORT || 5000;
