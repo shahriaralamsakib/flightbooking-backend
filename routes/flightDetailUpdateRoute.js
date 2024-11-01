@@ -97,8 +97,10 @@ router.post('/receive-data', async (req, res) => {
       `;
       await runQuery(insertFlightDetailsSql, [flightBookingId, userId, JSON.stringify(offer), JSON.stringify(dictionaries)]);
   
-      // Respond with success
-      return res.status(200).json({ message: 'Data successfully stored in the database.' });
+      return res.status(200).json({
+        message: 'Data successfully stored in the database.',
+        userId
+      });
   
     } catch (err) {
       console.error('Database operation error:', err);
