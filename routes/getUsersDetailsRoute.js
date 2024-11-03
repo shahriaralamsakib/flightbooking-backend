@@ -23,20 +23,26 @@ router.get('/users', async (req, res) => {
     try {
         // Query to get the required fields from the users table and flight_booking_details
         const query = `
-            SELECT 
+            SELECT
                 u.id,
-                u.firstname, 
-                u.lastname, 
+                u.firstname,
+                u.lastname,
                 u.email,
                 u.phonenumber,
-                U.reference_no,
-                u.submissiondate AS timespan, 
-                u.status, 
+                u.reference_no,
+                u.submissiondate AS timespan,
+                u.status,
                 f.flightdetails AS flightDetails,  -- Assuming flight_details is a JSON field
-                f.dictionaries AS dictionaries  -- Assuming dictionaries is also a JSON field
+                f.dictionaries AS dictionaries,    -- Assuming dictionaries is also a JSON field
+                b.address AS billingAddress,       -- Billing address details
+                b.city AS billingCity,
+                b.state AS billingState,
+                b.postcode AS billingPostCode,
+                b.country AS billingCountry
             FROM users u
             LEFT JOIN flight_booking_details f ON u.id = f.userid  -- Ensure the correct foreign key
-            ORDER BY u.submissiondate ${order.toUpperCase()}  -- Order by submissiondate
+            LEFT JOIN billing_address b ON u.id = b.userid         -- Join with billing_address table
+            ORDER BY u.submissiondate ${order.toUpperCase()}
         `;
         
         const result = await runQuery(query);

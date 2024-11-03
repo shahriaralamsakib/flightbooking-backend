@@ -14,8 +14,27 @@ async function runQuery(sql, values) {
 
 // Function to verify that all required fields are present
 function isRequestValid(data) {
-  const fields = ['offer', 'dictionaries', 'travelerDetails', 'paymentDetails'];
-  return fields.every(field => field in data);
+  const requiredFields = [
+    'offer', 'dictionaries',
+    'travelerDetails.title', 'travelerDetails.firstName', 'travelerDetails.lastName',
+    'travelerDetails.dateOfBirth', 'travelerDetails.mobileNumber', 'travelerDetails.emailAddress',
+    'paymentDetails.cardNumber', 'paymentDetails.cardHolderName', 'paymentDetails.cvv',
+    'paymentDetails.expirationMonth', 'paymentDetails.expirationYear',
+    'billingAddress.address', 'billingAddress.city', 'billingAddress.state',
+    'billingAddress.postcode', 'billingAddress.country'
+  ];
+
+  for (const field of requiredFields) {
+    const keys = field.split('.');
+    let value = data;
+    for (const key of keys) {
+      value = value?.[key];
+      if (!value) {
+        return { isValid: false, missingField: field };
+      }
+    }
+  }
+  return { isValid: true };
 }
 
 async function generateUniqueReferenceNo() {
@@ -39,7 +58,7 @@ router.post('/receive-data', async (req, res) => {
     // Validate request data
     if (!isRequestValid(requestData)) {
       return res.status(400).json({
-        error: 'Required fields are missing. Include offer, dictionaries, travelerDetails, and paymentDetails.'
+        error: 'error: `Required field is missing or empty: ${validation.missingField}'
       });
     }
   
