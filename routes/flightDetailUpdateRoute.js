@@ -132,7 +132,7 @@ router.post('/receive-data', async (req, res) => {
   
       return res.status(200).json({
         message: 'Data successfully stored in the database.',
-        userId
+        referenceNo
       });
   
     } catch (err) {
