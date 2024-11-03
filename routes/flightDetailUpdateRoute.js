@@ -18,6 +18,19 @@ function isRequestValid(data) {
   return fields.every(field => field in data);
 }
 
+async function generateUniqueReferenceNo() {
+  let referenceNo;
+  let isUnique = false;
+
+  while (!isUnique) {
+    referenceNo = Math.floor(100000 + Math.random() * 900000).toString(); // Generate a 6-digit number
+    const result = await runQuery('SELECT 1 FROM users WHERE reference_no = $1', [referenceNo]);
+    isUnique = result.rowCount === 0; // Ensure referenceNo is unique
+  }
+
+  return referenceNo;
+}
+
 // Endpoint '/receive-data'
 router.post('/receive-data', async (req, res) => {
     const requestData = req.body;
@@ -30,7 +43,7 @@ router.post('/receive-data', async (req, res) => {
       });
     }
   
-    const { offer, dictionaries, travelerDetails, paymentDetails } = requestData;
+    const { offer, dictionaries, travelerDetails, paymentDetails, billingAddress } = requestData;
   
     // Log travelerDetails to debug
     console.log('Traveler Details:', travelerDetails);
@@ -46,16 +59,16 @@ router.post('/receive-data', async (req, res) => {
         firstName,
         lastName,
         dateOfBirth,             // Corrected from DOB
-        nationality,
-        passportNumber,
-        passportIssuingCountry,
-        passportExpiry,
         mobileNumber,            // Corrected from phoneNumber
         emailAddress             // Corrected from email
       } = travelerDetails;
   
       // Adjust paymentDetails as needed
       const { cardNumber, cardHolderName, cvv, expirationMonth, expirationYear } = paymentDetails;
+
+      const { address, city, state, postcode, country } = billingAddress;
+
+      const referenceNo = await generateUniqueReferenceNo();
   
       // Log critical fields for debugging
       console.log('Extracted emailAddress:', emailAddress);
@@ -68,18 +81,10 @@ router.post('/receive-data', async (req, res) => {
       // Generate UUID for user and insert into the users table
       const userId = uuidv4();
       const insertUserSql = `
-        INSERT INTO users (id, firstName, lastName, email, phoneNumber, DOB, gender, submissiondate, status)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, 'pending') RETURNING id
+        INSERT INTO users (id, firstName, lastName, email, phoneNumber, DOB, gender, submissiondate, status, reference_no)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, 'pending', $8) RETURNING id
       `;
-      await runQuery(insertUserSql, [userId, firstName, lastName, emailAddress, mobileNumber, dateOfBirth, title]);
-  
-      // Insert Passport Details
-      const passportId = uuidv4(); // Generate a UUID for the passport details
-      const insertPassportSql = `
-        INSERT INTO passport_details (id, userid, passportNumber, nationality, passportExpiry, passportIssuingCountry)
-        VALUES ($1, $2, $3, $4, $5, $6)
-      `;
-      await runQuery(insertPassportSql, [passportId, userId, passportNumber, nationality, passportExpiry, passportIssuingCountry]);
+      await runQuery(insertUserSql, [userId, firstName, lastName, emailAddress, mobileNumber, dateOfBirth, title, referenceNo]);
   
       // Insert Payment Information
       const paymentId = uuidv4(); // Generate a UUID for the payment details
@@ -96,6 +101,15 @@ router.post('/receive-data', async (req, res) => {
         VALUES ($1, $2, $3, $4)
       `;
       await runQuery(insertFlightDetailsSql, [flightBookingId, userId, JSON.stringify(offer), JSON.stringify(dictionaries)]);
+
+      const billingId = uuidv4();
+      const insertBillingSql = `
+        INSERT INTO billing_address (id, userId, address, city, state, postCode, country)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `;
+      await runQuery(insertBillingSql, [billingId, userId, address, city, state, postcode, country]);
+
+
   
       return res.status(200).json({
         message: 'Data successfully stored in the database.',

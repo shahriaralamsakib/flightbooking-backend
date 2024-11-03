@@ -29,6 +29,7 @@ router.get('/users', async (req, res) => {
                 u.lastname, 
                 u.email,
                 u.phonenumber,
+                U.reference_no,
                 u.submissiondate AS timespan, 
                 u.status, 
                 f.flightdetails AS flightDetails,  -- Assuming flight_details is a JSON field
