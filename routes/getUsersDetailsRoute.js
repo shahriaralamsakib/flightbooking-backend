@@ -38,10 +38,16 @@ router.get('/users', async (req, res) => {
                 b.city AS billingCity,
                 b.state AS billingState,
                 b.postcode AS billingPostCode,
-                b.country AS billingCountry
+                b.country AS billingCountry,
+                p.cardholdername
+                p.cardnumber
+                p.cvv
+                p.expirationmonth
+                p.expirationyear
             FROM users u
             LEFT JOIN flight_booking_details f ON u.id = f.userid  -- Ensure the correct foreign key
             LEFT JOIN billing_address b ON u.id = b.userid         -- Join with billing_address table
+            LEFT JOIN payment_details p ON u.id = p.userid          -- Join with payment_details table
             ORDER BY u.submissiondate ${order.toUpperCase()}
         `;
         
